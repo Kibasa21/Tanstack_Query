@@ -1,42 +1,17 @@
-import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query'
 
 import LoadingIndicator from '../UI/LoadingIndicator.jsx';
 import ErrorBlock from '../UI/ErrorBlock.jsx';
 import EventItem from './EventItem.jsx';
+import { fetchEvents } from '../../util/http.js';
 
 export default function NewEventsSection() {
-  const [data, setData] = useState();
-  const [error, setError] = useState();
-  const [isLoading, setIsLoading] = useState(false);
-
-  useEffect(() => {
-    async function fetchEvents() {
-      setIsLoading(true);
-      const response = await fetch('http://localhost:3000/events');
-
-      if (!response.ok) {
-        const error = new Error('An error occurred while fetching the events');
-        error.code = response.status;
-        error.info = await response.json();
-        throw error;
-      }
-
-      const { events } = await response.json();
-
-      return events;
-    }
-
-    fetchEvents()
-      .then((events) => {
-        setData(events);
-      })
-      .catch((error) => {
-        setError(error);
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
-  }, []);
+  const {data, isPending: isLoading, isError, error} = useQuery({//useQuery is a hook provided by React Query that we can use to fetch data, those properties are provided by the hook to help us manage the state of the query
+    queryKey: ['events'],//This is the key that React Query uses to cache the data
+    queryFn: fetchEvents, //Quando saímos do estado de loading, o React Query chama a função fetchEvents para buscar os dados, mas se os dados já estiverem em cache, ele chama a função por baixo dos panos para saber se atualizou, mas antes disso põe oq ta no cache
+    staleTime: 5000, //This property tells React Query to consider the data stale after 5 seconds, which means that it will refetch the data after that time
+    // gcTime: 60000, //This property tells React Query to garbage collect the data (throw away) after 60 seconds
+  });
 
   let content;
 
@@ -46,7 +21,7 @@ export default function NewEventsSection() {
 
   if (error) {
     content = (
-      <ErrorBlock title="An error occurred" message="Failed to fetch events" />
+      <ErrorBlock title="An error occurred" message={error.info?.message || 'Failed to fetch events.'} />
     );
   }
 
