@@ -1,8 +1,16 @@
-export async function fetchEvents({signal, searchTerm}) {
+import { QueryClient } from "@tanstack/react-query";
+
+export const queryClient = new QueryClient();
+
+export async function fetchEvents({signal, searchTerm, max}) {
   let url = 'http://localhost:3000/events';
 
-  if(searchTerm){
+  if(searchTerm && max){
+    url += '?search=' + searchTerm + '&max=' + max;//If both the searchTerm and max are provided, we append them to the URL, the &max= in the url means that we are passing a second query parameter to the server
+  } else if (searchTerm){
     url += '?search=' + searchTerm;//If the searchTerm is provided, we append it to the URL, the ?search= in the url means that we are passing a query parameter to the server
+  } else if (max){//? inicia os query parameters, & é usado para adicionar mais query parameters
+    url += '?max=' + max;//If the max is provided, we append it to the URL, the &max= in the url means that we are passing a query parameter to the server
   }
 
   const response = await fetch(url, {signal: signal});//O signal serve para cancelar a requisição, se a requisição for cancelada, o fetch lança uma exceção
@@ -53,4 +61,54 @@ export async function fetchSelectableImages({ signal }) {
   const { images } = await response.json();
 
   return images;
+}
+
+export async function fetchEvent({ id, signal }) {
+  const response = await fetch(`http://localhost:3000/events/${id}`, { signal });
+
+  if (!response.ok) {
+    const error = new Error('An error occurred while fetching the event');
+    error.code = response.status;
+    error.info = await response.json();
+    throw error;
+  }
+
+  const { event } = await response.json();
+
+  return event;
+}
+
+
+export async function deleteEvent({ id }) {
+  const response = await fetch(`http://localhost:3000/events/${id}`, {
+    method: 'DELETE',
+  });
+
+  if (!response.ok) {
+    const error = new Error('An error occurred while deleting the event');
+    error.code = response.status;
+    error.info = await response.json();
+    throw error;
+  }
+
+  return response.json();
+}
+
+export async function updateEvent({ id, event }) {
+  const response = await fetch(`http://localhost:3000/events/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify({ event }),
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    const error = new Error('An error occurred while updating the event');
+    error.code = response.status;
+    error.info = await response.json();
+    throw error;
+  }
+
+  return response.json();
 }

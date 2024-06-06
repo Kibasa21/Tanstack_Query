@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import Modal from '../UI/Modal.jsx';
 import EventForm from './EventForm.jsx';
 import { useMutation } from '@tanstack/react-query';
-import { createNewEvent } from '../../util/http.js';
+import { createNewEvent, queryClient } from '../../util/http.js';
 import ErrorBlock from '../UI/ErrorBlock.jsx';
 
 export default function NewEvent() {
@@ -11,6 +11,10 @@ export default function NewEvent() {
 
   const { mutate, isPending, isError, error } = useMutation({//Serve para fazer uma mutação, ou seja, uma requisição que altera o estado do servidor, como criar, atualizar ou deletar um recurso. No backend ele faz um POST, PUT ou DELETE
     mutationFn: createNewEvent,
+    onSuccess: () => {
+      queryClient.invalidateQueries({queryKey: ['events']});//Invalida a query de eventos, para que ela seja refeita, assim atualizando a lista de eventos, ele invalida toda query que inclua o array ['events']
+      navigate('/events');//a diferença entre navigate e redirect é que o navigate é uma função que redireciona para uma rota, enquanto o redirect é um componente que redireciona para uma rota
+    }
   });
 
   function handleSubmit(formData) {
